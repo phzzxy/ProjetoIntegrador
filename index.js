@@ -1,28 +1,24 @@
-import express from 'express'
+import express from 'express';
+import conexo from './BN.js';
 
-import conexao from './BN.js'
+const app = express();
+const porta = 8080;
 
+app.use(express.json());
+app.use(express.static('public')); 
 
-const app = express()
-const servidor = 8080
+app.listen(porta, () => {
+    console.log(`Servidor ativo na porta ${porta}`);
+});
 
-app.use(express.json())
-
-
-app.listen(servidor, ()=>{
-    console.log(`servidor ativo ${servidor}`)
-})
-
-app.use(express.static('public'))
 
 app.get('/produtos', async (req, res) => {
     try {
-        const [produtos] = await conexao.query(
+        const [produtos] = await conexo.query(
             'SELECT * FROM produtos ORDER BY id DESC'
         );
 
         res.json(produtos);
-
     } catch (erro) {
         res.status(500).json({
             mensagem: 'Erro ao buscar produtos'
@@ -35,9 +31,7 @@ app.post('/produtos', async (req, res) => {
     try {
         const { nome, descricao, preco, categoria } = req.body;
 
-        if (!nome || !descricao || !categoria ||
-            preco === undefined || Number(preco) < 0 ||
-            !Number.isFinite(Number(preco))) {
+        if (!nome || !descricao || !categoria || preco === undefined || Number(preco) < 0 || !Number.isFinite(Number(preco))) {
             return res.status(400).json({
                 mensagem: 'Preencha os dados corretamente!'
             });
@@ -49,7 +43,7 @@ app.post('/produtos', async (req, res) => {
             VALUES (?, ?, ?, ?)
         `;
 
-        const [resultado] = await conexao.execute(sql, [
+        const [resultado] = await conexo.execute(sql, [
             nome,
             descricao,
             Number(preco),
@@ -60,7 +54,6 @@ app.post('/produtos', async (req, res) => {
             mensagem: 'Produto cadastrado com sucesso!',
             id: resultado.insertId
         });
-
     } catch (erro) {
         res.status(500).json({
             mensagem: 'Erro ao cadastrar produto'
@@ -68,7 +61,7 @@ app.post('/produtos', async (req, res) => {
     }
 });
 
-// EXCLUIR PRODUTO
+
 app.delete('/produtos/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -79,7 +72,7 @@ app.delete('/produtos/:id', async (req, res) => {
             });
         }
 
-        const [resultado] = await db.execute(
+        const [resultado] = await conexo.execute(
             'DELETE FROM produtos WHERE id = ?',
             [id]
         );
@@ -93,7 +86,6 @@ app.delete('/produtos/:id', async (req, res) => {
         res.json({
             mensagem: 'Produto excluído com sucesso!'
         });
-
     } catch (erro) {
         res.status(500).json({
             mensagem: 'Erro ao excluir produto'
